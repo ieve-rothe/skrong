@@ -1,62 +1,66 @@
+# Example Movement Seed File
+# Format:
+# - name: "Movement Name"
+#   category: "Category Name"
+#   targets:
+#     - "Target 1"
+#     - "Target 2"
+
 # UPPER PUSH
-- name: "Push-ups"
+- name: "Barbell Bench Press"
   category: "Upper Push"
   targets:
     - "Pectorals"
+    - "Triceps"
     - "Anterior Deltoids"
-    - "Deep Core & Transversus"
 
-- name: "Seated DB Overhead Press"
+- name: "Overhead Press"
   category: "Upper Push"
   targets:
     - "Anterior Deltoids"
     - "Triceps"
 
-- name: "DB Floor Press"
+- name: "Incline Dumbbell Press"
+  category: "Upper Push"
+  targets:
+    - "Pectorals"
+    - "Anterior Deltoids"
+
+- name: "Dips"
   category: "Upper Push"
   targets:
     - "Pectorals"
     - "Triceps"
-
-- name: "Banded Chest Press"
-  category: "Upper Push"
-  targets:
-    - "Pectorals"
 
 # UPPER PULL
-- name: "DB Single-Arm Rows"
-  category: "Upper Pull"
-  targets:
-    - "Lats & Teres Major"
-    - "Trapezius & Rhomboids"
-    - "Biceps"
-
 - name: "Pull-ups"
   category: "Upper Pull"
   targets:
     - "Lats & Teres Major"
     - "Biceps"
 
-- name: "Banded Lat Pulldowns"
+- name: "Barbell Rows"
   category: "Upper Pull"
   targets:
     - "Lats & Teres Major"
+    - "Trapezius & Rhomboids"
+
+- name: "Deadlift (Upper Back Focus)"
+  category: "Upper Pull"
+  targets:
+    - "Trapezius & Rhomboids"
+    - "Spinal Erectors"
+    - "Forearms & Grip"
 
 # LOWER HINGE
-- name: "DB Romanian Deadlift (RDL)"
+- name: "Romanian Deadlift"
   category: "Lower Hinge"
   targets:
     - "Hamstrings"
     - "Gluteus Maximus"
     - "Spinal Erectors"
 
-- name: "Glute Bridges (BW or DB)"
-  category: "Lower Hinge"
-  targets:
-    - "Gluteus Maximus"
-    - "Hamstrings"
-
-- name: "Barbell Deadlift (Gym Only)"
+- name: "Conventional Deadlift"
   category: "Lower Hinge"
   targets:
     - "Hamstrings"
@@ -64,67 +68,70 @@
     - "Spinal Erectors"
     - "Forearms & Grip"
 
+- name: "Good Mornings"
+  category: "Lower Hinge"
+  targets:
+    - "Hamstrings"
+    - "Spinal Erectors"
+
 # LOWER SQUAT
-- name: "DB Goblet Squat"
+- name: "Back Squat"
   category: "Lower Squat"
   targets:
     - "Quadriceps"
     - "Gluteus Maximus"
+
+- name: "Front Squat"
+  category: "Lower Squat"
+  targets:
+    - "Quadriceps"
     - "Deep Core & Transversus"
 
-- name: "DB Bulgarian Split Squat"
+- name: "Bulgarian Split Squat"
   category: "Lower Squat"
   targets:
     - "Quadriceps"
     - "Gluteus Maximus"
     - "Glute Medius & Minimus"
 
-- name: "Wall Sits"
+- name: "Leg Press"
   category: "Lower Squat"
   targets:
     - "Quadriceps"
+    - "Gluteus Maximus"
 
 # ARMOR & ISOLATION
-- name: "DB Lateral Raises"
+- name: "Lateral Raises"
   category: "Armor & Isolation"
   targets:
     - "Side & Rear Deltoids"
 
-- name: "Banded Face Pulls"
+- name: "Face Pulls"
   category: "Armor & Isolation"
   targets:
     - "Side & Rear Deltoids"
     - "Rotator Cuff"
 
-- name: "DB Bicep Curls"
+- name: "Bicep Curls"
   category: "Armor & Isolation"
   targets:
     - "Biceps"
 
-- name: "DB Overhead Tricep Extension"
+- name: "Tricep Extensions"
   category: "Armor & Isolation"
   targets:
     - "Triceps"
 
-- name: "Side-Lying Abduction (Heel Lead)"
-  category: "Armor & Isolation"
-  targets:
-    - "Glute Medius & Minimus"
-
-- name: "Supine Psoas Isometric Hold"
-  category: "Armor & Isolation"
-  targets:
-    - "Psoas & Hip Flexors"
-
-- name: "Toe Raises / Tibialis Lifts"
-  category: "Armor & Isolation"
-  targets:
-    - "Anterior Tibialis"
-
-- name: "DB Calf Raises"
+- name: "Calf Raises"
   category: "Armor & Isolation"
   targets:
     - "Calves & Soleus"
+
+- name: "Farmer's Walks"
+  category: "Armor & Isolation"
+  targets:
+    - "Forearms & Grip"
+    - "Trapezius & Rhomboids"
 
 # CORE & STABILITY
 - name: "Planks"
@@ -132,21 +139,25 @@
   targets:
     - "Deep Core & Transversus"
 
-- name: "Banded Pallof Press"
+- name: "Pallof Press"
   category: "Core & Stability"
   targets:
     - "Deep Core & Transversus"
     - "Obliques"
 
-- name: "Dead Bugs"
+- name: "Russian Twists"
+  category: "Core & Stability"
+  targets:
+    - "Obliques"
+
+- name: "Hanging Leg Raises"
   category: "Core & Stability"
   targets:
     - "Deep Core & Transversus"
     - "Psoas & Hip Flexors"
 
-- name: "DB Suitcase Carry"
+- name: "Hip Thrusts"
   category: "Core & Stability"
   targets:
-    - "Obliques"
-    - "Forearms & Grip"
+    - "Gluteus Maximus"
     - "Glute Medius & Minimus"
