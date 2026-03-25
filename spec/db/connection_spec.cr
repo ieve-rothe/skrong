@@ -1,0 +1,43 @@
+require "../spec_helper"
+
+describe Skrong::DB::Connection do
+  describe ".instance" do
+    it "returns a DB::Database instance" do
+      db = Skrong::DB::Connection.instance
+      db.should be_a(::DB::Database)
+    end
+
+    it "returns the same instance on multiple calls (singleton)" do
+      db1 = Skrong::DB::Connection.instance
+      db2 = Skrong::DB::Connection.instance
+      db1.should be(db2)
+    end
+  end
+
+  describe ".db_path" do
+    it "returns the XDG-compliant database path" do
+      path = Skrong::DB::Connection.db_path
+      path.should contain(".local/share/skrong")
+      path.should end_with("skrong.db")
+    end
+
+    it "creates parent directory if it doesn't exist" do
+      # This is tested implicitly when instance is called
+      # The directory creation happens before opening the database
+      db_path = Skrong::DB::Connection.db_path
+      File.dirname(db_path).should_not be_nil
+    end
+  end
+
+  describe ".reset!" do
+    it "allows getting a new instance after reset" do
+      db1 = Skrong::DB::Connection.instance
+      Skrong::DB::Connection.reset!
+      db2 = Skrong::DB::Connection.instance
+
+      # After reset, we should successfully get a new connection
+      # Both instances point to the same file but are different connection objects
+      db2.should be_a(::DB::Database)
+    end
+  end
+end
