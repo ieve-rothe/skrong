@@ -30,6 +30,8 @@ module Skrong
         handle_library_command(args[1..]?, input: input, output: output)
       when "targets"
         handle_targets_command(args[1..]?, input: input, output: output)
+      when "seed"
+        handle_seed_command(args[1..]?, output: output)
       else
         output.puts "Unknown command: #{command}"
         output.puts "Run 'skrong --help' for usage information."
@@ -140,6 +142,46 @@ module Skrong
       end
     end
 
+    # Handles seed subcommands
+    private def self.handle_seed_command(subargs : Array(String)?, output : IO)
+      if subargs.nil? || subargs.empty?
+        output.puts "Seed command requires a subcommand."
+        output.puts ""
+        output.puts "Available subcommands:"
+        output.puts "  seed targets <file>       Import targets from seed file"
+        output.puts "  seed movements <file>     Import movements from seed file"
+        output.puts ""
+        output.puts "Examples:"
+        output.puts "  skrong seed targets targets_seed.md"
+        output.puts "  skrong seed movements movements_seed.md"
+        return
+      end
+
+      subcommand = subargs[0]
+
+      case subcommand
+      when "targets"
+        if subargs.size < 2
+          output.puts "Usage: skrong seed targets <file_path>"
+          return
+        end
+
+        file_path = subargs[1]
+        Commands::Seed.import_targets(file_path, output: output)
+      when "movements"
+        if subargs.size < 2
+          output.puts "Usage: skrong seed movements <file_path>"
+          return
+        end
+
+        file_path = subargs[1]
+        Commands::Seed.import_movements(file_path, output: output)
+      else
+        output.puts "Unknown seed subcommand: #{subcommand}"
+        output.puts "Run 'skrong seed' to see available subcommands."
+      end
+    end
+
     # Shows help information
     private def self.show_help(output : IO)
       output.puts <<-HELP
@@ -160,6 +202,8 @@ module Skrong
         targets add               Add a new target
         targets edit <id>         Edit a target
         targets delete <id>       Delete a target
+        seed targets <file>       Import targets from seed file
+        seed movements <file>     Import movements from seed file
 
       Options:
         -h, --help               Show this help message
@@ -174,6 +218,8 @@ module Skrong
         skrong library list      View all available movements
         skrong targets list      View all muscle groups
         skrong targets add       Add a custom muscle group
+        skrong seed targets targets_seed.md    Bulk import targets
+        skrong seed movements movements_seed.md    Bulk import movements
 
       For more information, visit: https://github.com/yourusername/skrong
       HELP

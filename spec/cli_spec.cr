@@ -109,6 +109,7 @@ describe Skrong::CLI do
       output_str.should contain("summary")
       output_str.should contain("library")
       output_str.should contain("targets")
+      output_str.should contain("seed")
     end
 
     it "routes to summary command for today" do
@@ -200,6 +201,69 @@ describe Skrong::CLI do
 
       output.to_s.should contain("Usage")
       output.to_s.should contain("<target_id>")
+    end
+
+    it "routes to seed targets command" do
+      Skrong::DB::Migrations.run
+
+      seed_content = <<-SEED
+      - name: "Test Target"
+        decay_threshold_days: 5
+      SEED
+
+      File.write("/tmp/test_cli_targets_seed.md", seed_content)
+
+      output = IO::Memory.new
+      Skrong::CLI.run(["seed", "targets", "/tmp/test_cli_targets_seed.md"], output: output)
+
+      output.to_s.should contain("imported successfully")
+
+      File.delete("/tmp/test_cli_targets_seed.md")
+    end
+
+    it "routes to seed movements command" do
+      Skrong::DB::Migrations.run
+      Skrong::Models::Target.create("Pectorals")
+
+      seed_content = <<-SEED
+      - name: "Test Movement"
+        category: "Upper Push"
+        targets:
+          - "Pectorals"
+      SEED
+
+      File.write("/tmp/test_cli_movements_seed.md", seed_content)
+
+      output = IO::Memory.new
+      Skrong::CLI.run(["seed", "movements", "/tmp/test_cli_movements_seed.md"], output: output)
+
+      output.to_s.should contain("imported successfully")
+
+      File.delete("/tmp/test_cli_movements_seed.md")
+    end
+
+    it "shows error for seed without subcommand" do
+      output = IO::Memory.new
+      Skrong::CLI.run(["seed"], output: output)
+
+      output.to_s.should contain("seed targets")
+      output.to_s.should contain("seed movements")
+    end
+
+    it "shows error for seed targets without file" do
+      output = IO::Memory.new
+      Skrong::CLI.run(["seed", "targets"], output: output)
+
+      output.to_s.should contain("Usage")
+      output.to_s.should contain("<file_path>")
+    end
+
+    it "shows error for seed movements without file" do
+      output = IO::Memory.new
+      Skrong::CLI.run(["seed", "movements"], output: output)
+
+      output.to_s.should contain("Usage")
+      output.to_s.should contain("<file_path>")
     end
   end
 end
