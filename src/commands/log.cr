@@ -59,12 +59,12 @@ module Skrong
 
       # Phase 1: Date selection
       private def self.prompt_date(input : IO, output : IO, today : Time) : Time
-        output.print "Log for today (#{today.to_s("%Y-%m-%d")})? (y/n): "
+        output.print "Log for today (#{today.to_s("%Y-%m-%d")})? (Y/n): "
         output.flush
 
-        response = input.gets.try(&.strip.downcase)
+        response = input.gets.try(&.strip.downcase) || "y"
 
-        if response == "y"
+        if response == "y" || response.empty?
           return today
         else
           loop do
