@@ -1,6 +1,14 @@
 module Skrong
   module Commands
     module Log
+      # Exception for user requesting quit
+      class QuitRequested < Exception
+      end
+
+      # Exception for user requesting back navigation
+      class BackRequested < Exception
+      end
+
       # Main entry point for the logging command
       def self.run(input : IO = STDIN, output : IO = STDOUT, today : Time = Time.local)
         # Phase 1: Date selection
@@ -11,48 +19,73 @@ module Skrong
         set_count = 0
         movements_used = [] of String
 
-        # Phase 2-5: Movement selection and logging loop
-        loop do
-          # Phase 2: Category selection
-          category = select_category(input, output)
-
-          # Phase 3: Movement selection
-          movement = select_movement(input, output, category)
-          movements_used << movement.name unless movements_used.includes?(movement.name)
-
-          # Phase 4: Payload entry
-          last_weight = nil
-          last_reps = nil
-          last_rpe = nil
-
+        begin
+          # Phase 2-5: Movement selection and logging loop
           loop do
-            payload = prompt_payload(input, output, movement.name, last_weight, last_reps, last_rpe)
+            # Phase 2: Category selection
+            category = select_category(input, output)
 
-            # Create the set
-            Models::Set.create(session.id, movement.id, payload[:weight], payload[:reps], payload[:rpe])
-            set_count += 1
+            # Phase 3: Movement selection with back support
+            loop do
+              begin
+                movement = select_movement(input, output, category)
+                movements_used << movement.name unless movements_used.includes?(movement.name)
 
-            # Store for defaults
-            last_weight = payload[:weight]
-            last_reps = payload[:reps]
-            last_rpe = payload[:rpe]
+                # Phase 4: Payload entry with back support
+                last_weight = nil
+                last_reps = nil
+                last_rpe = nil
 
-            output.puts "Set logged: #{payload[:weight]} x #{payload[:reps]} @ RPE #{payload[:rpe]}"
-            output.puts
+                loop do
+                  begin
+                    payload = prompt_payload(input, output, movement.name, last_weight, last_reps, last_rpe)
 
-            # Phase 5: Sticky loop
-            choice = prompt_continue(input, output, movement.name)
+                    # Create the set
+                    Models::Set.create(session.id, movement.id, payload[:weight], payload[:reps], payload[:rpe])
+                    set_count += 1
 
-            case choice
-            when :repeat
-              next  # Continue inner loop (same movement)
-            when :change
-              break  # Break inner loop (select new movement)
-            when :done
-              # Show summary and exit
-              show_summary(output, session, set_count, movements_used)
-              return
+                    # Store for defaults
+                    last_weight = payload[:weight]
+                    last_reps = payload[:reps]
+                    last_rpe = payload[:rpe]
+
+                    output.puts "Set logged: #{payload[:weight]} x #{payload[:reps]} @ RPE #{payload[:rpe]}"
+                    output.puts
+
+                    # Phase 5: Sticky loop
+                    choice = prompt_continue(input, output, movement.name)
+
+                    case choice
+                    when :repeat
+                      next  # Continue inner loop (same movement)
+                    when :change
+                      break  # Break inner loop (select new movement)
+                    when :done
+                      # Show summary and exit
+                      show_summary(output, session, set_count, movements_used)
+                      return
+                    end
+                  rescue BackRequested
+                    # Go back to movement selection
+                    break
+                  end
+                end
+
+                # If we got here normally (not via back), break to category selection
+                break
+              rescue BackRequested
+                # Go back to category selection
+                break
+              end
             end
+          end
+        rescue QuitRequested
+          # User requested quit - show summary if any sets were logged
+          if set_count > 0
+            show_summary(output, session, set_count, movements_used)
+          else
+            output.puts
+            output.puts "No sets logged. Session cancelled."
           end
         end
       end
@@ -90,13 +123,18 @@ module Skrong
         categories.each_with_index do |cat, index|
           output.puts "  #{index + 1}. #{cat.name}"
         end
+        output.puts "  (q to quit)"
         output.puts
 
         loop do
           output.print "Enter number (1-#{categories.size}): "
           output.flush
 
-          selection_input = input.gets.try(&.strip) || ""
+          selection_input = input.gets.try(&.strip.downcase) || ""
+
+          # Check for quit
+          raise QuitRequested.new if selection_input == "q"
+
           selection = UI::Select.parse_selection(selection_input, categories.size)
 
           if selection
@@ -121,13 +159,19 @@ module Skrong
         movements.each_with_index do |mov, index|
           output.puts "  #{index + 1}. #{mov.name}"
         end
+        output.puts "  (b to go back, q to quit)"
         output.puts
 
         loop do
           output.print "Enter number (1-#{movements.size}): "
           output.flush
 
-          selection_input = input.gets.try(&.strip) || ""
+          selection_input = input.gets.try(&.strip.downcase) || ""
+
+          # Check for quit or back
+          raise QuitRequested.new if selection_input == "q"
+          raise BackRequested.new if selection_input == "b"
+
           selection = UI::Select.parse_selection(selection_input, movements.size)
 
           if selection
@@ -142,6 +186,7 @@ module Skrong
       private def self.prompt_payload(input : IO, output : IO, movement_name : String,
                                      last_weight : Float64?, last_reps : Int32?, last_rpe : Int32?) : NamedTuple(weight: Float64, reps: Int32, rpe: Int32)
         output.puts "[#{movement_name}]"
+        output.puts "(b to go back, q to quit)"
 
         if last_weight && last_reps && last_rpe
           output.puts "Previous: #{last_weight} #{last_reps} #{last_rpe}"
@@ -153,6 +198,10 @@ module Skrong
 
         loop do
           payload_input = input.gets.try(&.strip) || ""
+
+          # Check for quit or back first
+          raise QuitRequested.new if payload_input.downcase == "q"
+          raise BackRequested.new if payload_input.downcase == "b"
 
           # If empty and we have defaults, use them
           if payload_input.empty? && last_weight && last_reps && last_rpe
@@ -172,10 +221,11 @@ module Skrong
 
       # Phase 5: Sticky loop
       private def self.prompt_continue(input : IO, output : IO, movement_name : String) : Symbol
-        output.puts "Log another set of #{movement_name}? (y/n/c)"
+        output.puts "Log another set of #{movement_name}? (y/n/c/q)"
         output.puts "  y - Log another set"
         output.puts "  n - Done, exit"
         output.puts "  c - Change movement"
+        output.puts "  q - Quit (same as done)"
         output.print "Choice: "
         output.flush
 
@@ -185,12 +235,12 @@ module Skrong
           case choice
           when "y"
             return :repeat
-          when "n"
+          when "n", "q"
             return :done
           when "c"
             return :change
           else
-            output.print "Invalid choice. Enter y, n, or c: "
+            output.print "Invalid choice. Enter y, n, c, or q: "
             output.flush
           end
         end

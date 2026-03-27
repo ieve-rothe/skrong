@@ -218,5 +218,140 @@ describe Skrong::Commands::Log do
       sets = Skrong::Models::Set.find_by_session(sessions.first.id)
       sets.size.should eq(2)
     end
+
+    it "quits gracefully with 'q' at category selection after logging sets" do
+      input = IO::Memory.new("y\n1\n1\n185 8 7\nc\nq\n")
+      output = IO::Memory.new
+
+      Skrong::Commands::Log.run(
+        input: input,
+        output: output,
+        today: Time.local(2026, 3, 24)
+      )
+
+      # Verify set was created
+      sets = Skrong::Models::Set.all
+      sets.size.should eq(1)
+
+      # Verify summary was shown
+      output_str = output.to_s
+      output_str.should contain("Session logged")
+      output_str.should contain("1 sets")
+    end
+
+    it "quits gracefully with 'q' at category selection without logging sets" do
+      input = IO::Memory.new("y\nq\n")
+      output = IO::Memory.new
+
+      Skrong::Commands::Log.run(
+        input: input,
+        output: output,
+        today: Time.local(2026, 3, 24)
+      )
+
+      # Verify no sets were created
+      sets = Skrong::Models::Set.all
+      sets.size.should eq(0)
+
+      # Verify cancellation message was shown
+      output_str = output.to_s
+      output_str.should contain("No sets logged")
+      output_str.should contain("cancelled")
+    end
+
+    it "quits gracefully with 'q' at movement selection" do
+      input = IO::Memory.new("y\n1\nq\n")
+      output = IO::Memory.new
+
+      Skrong::Commands::Log.run(
+        input: input,
+        output: output,
+        today: Time.local(2026, 3, 24)
+      )
+
+      # Verify no sets were created
+      sets = Skrong::Models::Set.all
+      sets.size.should eq(0)
+
+      output_str = output.to_s
+      output_str.should contain("No sets logged")
+    end
+
+    it "quits gracefully with 'q' at payload entry" do
+      input = IO::Memory.new("y\n1\n1\nq\n")
+      output = IO::Memory.new
+
+      Skrong::Commands::Log.run(
+        input: input,
+        output: output,
+        today: Time.local(2026, 3, 24)
+      )
+
+      # Verify no sets were created
+      sets = Skrong::Models::Set.all
+      sets.size.should eq(0)
+
+      output_str = output.to_s
+      output_str.should contain("No sets logged")
+    end
+
+    it "quits gracefully with 'q' at continue prompt" do
+      input = IO::Memory.new("y\n1\n1\n185 8 7\nq\n")
+      output = IO::Memory.new
+
+      Skrong::Commands::Log.run(
+        input: input,
+        output: output,
+        today: Time.local(2026, 3, 24)
+      )
+
+      # Verify set was created
+      sets = Skrong::Models::Set.all
+      sets.size.should eq(1)
+
+      # Verify summary was shown (q acts like n/done)
+      output_str = output.to_s
+      output_str.should contain("Session logged")
+    end
+
+    it "goes back from movement selection to category selection" do
+      input = IO::Memory.new("y\n1\nb\n2\n1\n135 8 7\nn\n")
+      output = IO::Memory.new
+
+      Skrong::Commands::Log.run(
+        input: input,
+        output: output,
+        today: Time.local(2026, 3, 24)
+      )
+
+      # Verify set was created
+      sets = Skrong::Models::Set.all
+      sets.size.should eq(1)
+
+      output_str = output.to_s
+      output_str.should contain("Session logged")
+    end
+
+    it "goes back from payload entry to movement selection" do
+      # Create a second movement in the same category
+      category = Skrong::Models::Category.all.first
+      Skrong::Models::Movement.create("Dumbbell Press", category.id)
+
+      input = IO::Memory.new("y\n1\n1\nb\n2\n185 8 7\nn\n")
+      output = IO::Memory.new
+
+      Skrong::Commands::Log.run(
+        input: input,
+        output: output,
+        today: Time.local(2026, 3, 24)
+      )
+
+      # Verify set was created for the second movement
+      sets = Skrong::Models::Set.all
+      sets.size.should eq(1)
+
+      movement = Skrong::Models::Movement.find(sets.first.movement_id)
+      movement.not_nil!.name.should eq("Dumbbell Press")
+    end
   end
 end

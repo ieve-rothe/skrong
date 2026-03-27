@@ -3,3 +3,6 @@
 /bin/
 /.shards/
 *.dwarf
+
+# Test database
+/spec/test.db

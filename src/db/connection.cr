@@ -13,10 +13,15 @@ module Skrong
         end
       end
 
-      # Returns the XDG-compliant database file path
+      # Returns the database file path
+      # Uses local test database when SKRONG_ENV=test, otherwise XDG-compliant path
       def self.db_path : String
-        data_home = ENV["XDG_DATA_HOME"]? || Path.home.join(".local", "share").to_s
-        File.join(data_home, "skrong", "skrong.db")
+        if ENV["SKRONG_ENV"]? == "test"
+          File.join(Dir.current, "spec", "test.db")
+        else
+          data_home = ENV["XDG_DATA_HOME"]? || Path.home.join(".local", "share").to_s
+          File.join(data_home, "skrong", "skrong.db")
+        end
       end
 
       # Resets the connection (primarily for testing)
