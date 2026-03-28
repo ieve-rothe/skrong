@@ -1,6 +1,51 @@
 module Skrong
   module Commands
     module Seed
+      # Imports categories from a seed file
+      def self.import_categories(file_path : String, output : IO = STDOUT)
+        unless File.exists?(file_path)
+          output.puts "File not found: #{file_path}"
+          return
+        end
+
+        output.puts "Importing categories from #{file_path}..."
+        output.puts
+
+        content = File.read(file_path)
+        categories_data = parse_categories_seed(content)
+
+        imported = 0
+        skipped = 0
+
+        categories_data.each do |category_data|
+          # Check if category already exists
+          existing = Models::Category.all.find { |c| c.name == category_data[:name] }
+
+          if existing
+            output.puts "  ⊘ Skipped: #{category_data[:name]} (already exists)"
+            skipped += 1
+            next
+          end
+
+          # Get the next display_order (max + 1)
+          max_order = Models::Category.all.map(&.display_order).max? || 0
+
+          Models::Category.create(
+            category_data[:name],
+            max_order + 1,
+            category_data[:activity_type]
+          )
+
+          output.puts "  ✓ Imported: #{category_data[:name]} (#{category_data[:activity_type]})"
+          imported += 1
+        end
+
+        output.puts
+        output.puts "=" * 60
+        output.puts "#{imported} categories imported successfully, #{skipped} skipped."
+        output.puts "=" * 60
+      end
+
       # Imports targets from a seed file
       def self.import_targets(file_path : String, output : IO = STDOUT)
         unless File.exists?(file_path)
@@ -101,6 +146,51 @@ module Skrong
         output.puts "=" * 60
         output.puts "#{imported} movements imported successfully, #{skipped} skipped, #{errors} errors."
         output.puts "=" * 60
+      end
+
+      # Parses categories seed file content
+      private def self.parse_categories_seed(content : String) : Array(NamedTuple(name: String, activity_type: String))
+        categories = [] of NamedTuple(name: String, activity_type: String)
+        current_name : String? = nil
+        current_activity_type = "strength"
+
+        content.lines.each do |line|
+          line = line.strip
+
+          # Skip empty lines and section headers
+          next if line.empty?
+          next if line.starts_with?("#") && !line.includes?("- name:")
+
+          # Parse name line
+          if line.starts_with?("- name:")
+            # Save previous category if exists
+            if current_name
+              categories << {name: current_name, activity_type: current_activity_type}
+            end
+
+            # Extract name
+            name_match = line.match(/- name:\s*"([^"]+)"/)
+            if name_match
+              current_name = name_match[1].strip
+              current_activity_type = "strength"  # Reset to default
+            end
+          # Parse activity_type line
+          elsif line.includes?("activity_type:")
+            if current_name
+              type_match = line.match(/activity_type:\s*"([^"]+)"/)
+              if type_match
+                current_activity_type = type_match[1].strip
+              end
+            end
+          end
+        end
+
+        # Save last category
+        if current_name
+          categories << {name: current_name, activity_type: current_activity_type}
+        end
+
+        categories
       end
 
       # Parses targets seed file content

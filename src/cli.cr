@@ -148,10 +148,12 @@ module Skrong
         output.puts "Seed command requires a subcommand."
         output.puts ""
         output.puts "Available subcommands:"
+        output.puts "  seed categories <file>    Import categories from seed file"
         output.puts "  seed targets <file>       Import targets from seed file"
         output.puts "  seed movements <file>     Import movements from seed file"
         output.puts ""
         output.puts "Examples:"
+        output.puts "  skrong seed categories endurance_categories_seed.md"
         output.puts "  skrong seed targets targets_seed.md"
         output.puts "  skrong seed movements movements_seed.md"
         return
@@ -160,6 +162,14 @@ module Skrong
       subcommand = subargs[0]
 
       case subcommand
+      when "categories"
+        if subargs.size < 2
+          output.puts "Usage: skrong seed categories <file_path>"
+          return
+        end
+
+        file_path = subargs[1]
+        Commands::Seed.import_categories(file_path, output: output)
       when "targets"
         if subargs.size < 2
           output.puts "Usage: skrong seed targets <file_path>"

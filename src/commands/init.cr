@@ -8,19 +8,26 @@ module Skrong
         # Check if already initialized by checking if categories exist
         category_count = db.query_one("SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='categories'", as: Int32)
 
+        already_initialized = false
         if category_count > 0
           # Check if categories are already seeded
           existing_categories = db.query_one("SELECT COUNT(*) FROM categories", as: Int32)
 
           if existing_categories > 0
-            output.puts "Database already initialized at #{DB::Connection.db_path}"
-            output.puts "Categories: #{existing_categories}"
-            return
+            already_initialized = true
           end
         end
 
-        # Run migrations
+        # Always run migrations (handles both initial setup and schema updates)
         DB::Migrations.run
+
+        if already_initialized
+          output.puts "Database already initialized at #{DB::Connection.db_path}"
+          output.puts "Migrations applied (if any)."
+          existing_categories = db.query_one("SELECT COUNT(*) FROM categories", as: Int32)
+          output.puts "Categories: #{existing_categories}"
+          return
+        end
 
         output.puts "Database initialized successfully!"
         output.puts "Location: #{DB::Connection.db_path}"

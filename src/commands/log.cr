@@ -32,24 +32,47 @@ module Skrong
                 movements_used << movement.name unless movements_used.includes?(movement.name)
 
                 # Phase 4: Payload entry with back support
+                # Track last values for both strength and endurance
                 last_weight = nil
                 last_reps = nil
                 last_rpe = nil
+                last_distance = nil
+                last_duration_seconds = nil
 
                 loop do
                   begin
-                    payload = prompt_payload(input, output, movement.name, last_weight, last_reps, last_rpe)
+                    payload = prompt_payload(input, output, movement.name, category.activity_type,
+                      last_weight, last_reps, last_rpe, last_distance, last_duration_seconds)
 
-                    # Create the set
-                    Models::Set.create(session.id, movement.id, payload[:weight], payload[:reps], payload[:rpe])
-                    set_count += 1
+                    # Create the appropriate type of set
+                    if category.activity_type == "endurance"
+                      Models::Set.create_endurance(session.id, movement.id,
+                        payload[:distance].not_nil!, payload[:duration_seconds].not_nil!, payload[:rpe])
+                      set_count += 1
 
-                    # Store for defaults
-                    last_weight = payload[:weight]
-                    last_reps = payload[:reps]
-                    last_rpe = payload[:rpe]
+                      # Store for defaults
+                      last_distance = payload[:distance]
+                      last_duration_seconds = payload[:duration_seconds]
+                      last_rpe = payload[:rpe]
 
-                    output.puts "Set logged: #{payload[:weight]} x #{payload[:reps]} @ RPE #{payload[:rpe]}"
+                      # Format output for endurance
+                      dist = payload[:distance].not_nil!
+                      dur = payload[:duration_seconds].not_nil!
+                      # Create a temporary set to use formatting helpers
+                      temp_set = Models::Set.new(0_i64, session.id, movement.id, nil, nil, payload[:rpe], dist, dur)
+                      output.puts "Effort logged: #{dist} mi in #{temp_set.format_duration(dur)} @ RPE #{payload[:rpe]}"
+                    else
+                      Models::Set.create(session.id, movement.id,
+                        payload[:weight].not_nil!, payload[:reps].not_nil!, payload[:rpe])
+                      set_count += 1
+
+                      # Store for defaults
+                      last_weight = payload[:weight]
+                      last_reps = payload[:reps]
+                      last_rpe = payload[:rpe]
+
+                      output.puts "Set logged: #{payload[:weight]} x #{payload[:reps]} @ RPE #{payload[:rpe]}"
+                    end
                     output.puts
 
                     # Phase 5: Sticky loop
@@ -183,16 +206,37 @@ module Skrong
       end
 
       # Phase 4: Payload entry
-      private def self.prompt_payload(input : IO, output : IO, movement_name : String,
-                                     last_weight : Float64?, last_reps : Int32?, last_rpe : Int32?) : NamedTuple(weight: Float64, reps: Int32, rpe: Int32)
+      private def self.prompt_payload(input : IO, output : IO, movement_name : String, activity_type : String,
+                                     last_weight : Float64?, last_reps : Int32?, last_rpe : Int32?,
+                                     last_distance : Float64?, last_duration_seconds : Int32?) : NamedTuple(
+        weight: Float64?,
+        reps: Int32?,
+        distance: Float64?,
+        duration_seconds: Int32?,
+        rpe: Int32
+      )
         output.puts "[#{movement_name}]"
         output.puts "(b to go back, q to quit)"
 
-        if last_weight && last_reps && last_rpe
-          output.puts "Previous: #{last_weight} #{last_reps} #{last_rpe}"
-          output.print "Enter (↵ to repeat, or new values): "
+        if activity_type == "endurance"
+          # Endurance payload prompting
+          if last_distance && last_duration_seconds && last_rpe
+            # Format duration for display
+            temp_set = Models::Set.new(0_i64, 0_i64, 0_i64, nil, nil, last_rpe, last_distance, last_duration_seconds)
+            formatted_duration = temp_set.format_duration(last_duration_seconds)
+            output.puts "Previous: #{last_distance} #{formatted_duration} #{last_rpe}"
+            output.print "Enter (↵ to repeat, or new values): "
+          else
+            output.print "Enter: distance duration rpe (e.g., 3.1 24:30 7): "
+          end
         else
-          output.print "Enter: weight reps rpe (e.g., 185 8 7): "
+          # Strength payload prompting
+          if last_weight && last_reps && last_rpe
+            output.puts "Previous: #{last_weight} #{last_reps} #{last_rpe}"
+            output.print "Enter (↵ to repeat, or new values): "
+          else
+            output.print "Enter: weight reps rpe (e.g., 185 8 7): "
+          end
         end
         output.flush
 
@@ -204,15 +248,23 @@ module Skrong
           raise BackRequested.new if payload_input.downcase == "b"
 
           # If empty and we have defaults, use them
-          if payload_input.empty? && last_weight && last_reps && last_rpe
-            return {weight: last_weight, reps: last_reps, rpe: last_rpe}
+          if payload_input.empty?
+            if activity_type == "endurance" && last_distance && last_duration_seconds && last_rpe
+              return {weight: nil, reps: nil, distance: last_distance, duration_seconds: last_duration_seconds, rpe: last_rpe}
+            elsif activity_type != "endurance" && last_weight && last_reps && last_rpe
+              return {weight: last_weight, reps: last_reps, distance: nil, duration_seconds: nil, rpe: last_rpe}
+            end
           end
 
           begin
-            return UI::Prompt.parse_payload(payload_input)
+            return UI::Prompt.parse_set_payload(activity_type, payload_input)
           rescue e : UI::Prompt::ParseError
             output.puts "Invalid format: #{e.message}"
-            output.puts UI::Prompt.payload_format_example
+            if activity_type == "endurance"
+              output.puts UI::Prompt.endurance_format_example
+            else
+              output.puts UI::Prompt.payload_format_example
+            end
             output.print "Try again: "
             output.flush
           end

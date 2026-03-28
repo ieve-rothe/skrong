@@ -133,4 +133,81 @@ describe Skrong::UI::Prompt do
       example.should contain("rpe")
     end
   end
+
+  describe ".parse_endurance_payload" do
+    it "parses valid distance duration rpe (MM:SS)" do
+      result = Skrong::UI::Prompt.parse_endurance_payload("3.1 24:30 7")
+      result.should eq({distance: 3.1, duration_seconds: 1470, rpe: 7})
+    end
+
+    it "parses valid distance duration rpe (HH:MM:SS)" do
+      result = Skrong::UI::Prompt.parse_endurance_payload("13.1 1:45:00 8")
+      result.should eq({distance: 13.1, duration_seconds: 6300, rpe: 8})
+    end
+
+    it "parses single-digit minute duration (M:SS)" do
+      result = Skrong::UI::Prompt.parse_endurance_payload("1.5 8:30 6")
+      result.should eq({distance: 1.5, duration_seconds: 510, rpe: 6})
+    end
+
+    it "parses integer distance" do
+      result = Skrong::UI::Prompt.parse_endurance_payload("5 40:00 7")
+      result.should eq({distance: 5.0, duration_seconds: 2400, rpe: 7})
+    end
+
+    it "raises error for invalid format (too few values)" do
+      expect_raises(Skrong::UI::Prompt::ParseError, "Invalid format") do
+        Skrong::UI::Prompt.parse_endurance_payload("3.1 24:30")
+      end
+    end
+
+    it "raises error for negative distance" do
+      expect_raises(Skrong::UI::Prompt::ParseError, "Distance must be a positive number") do
+        Skrong::UI::Prompt.parse_endurance_payload("-3.1 24:30 7")
+      end
+    end
+
+    it "raises error for zero distance" do
+      expect_raises(Skrong::UI::Prompt::ParseError, "Distance must be a positive number") do
+        Skrong::UI::Prompt.parse_endurance_payload("0 24:30 7")
+      end
+    end
+
+    it "raises error for invalid duration format" do
+      expect_raises(Skrong::UI::Prompt::ParseError, "Duration must be in MM:SS or HH:MM:SS format") do
+        Skrong::UI::Prompt.parse_endurance_payload("3.1 24 7")
+      end
+    end
+
+    it "raises error for RPE out of range" do
+      expect_raises(Skrong::UI::Prompt::ParseError, "RPE must be an integer between 1 and 10") do
+        Skrong::UI::Prompt.parse_endurance_payload("3.1 24:30 11")
+      end
+    end
+  end
+
+  describe ".parse_set_payload" do
+    it "parses strength payload when activity_type is strength" do
+      result = Skrong::UI::Prompt.parse_set_payload("strength", "185 8 7")
+      result[:weight].should eq(185.0)
+      result[:reps].should eq(8)
+      result[:rpe].should eq(7)
+      result[:distance].should be_nil
+      result[:duration_seconds].should be_nil
+    end
+
+    it "parses endurance payload when activity_type is endurance" do
+      result = Skrong::UI::Prompt.parse_set_payload("endurance", "3.1 24:30 7")
+      result[:weight].should be_nil
+      result[:reps].should be_nil
+      result[:rpe].should eq(7)
+      result[:distance].should eq(3.1)
+      result[:duration_seconds].should eq(1470)
+    end
+
+    it "defaults to strength for unknown activity_type" do
+      result = Skrong::UI::Prompt.parse_set_payload("unknown", "185 8 7")
+      result[:weight].should eq(185.0)
+    end
+  end
 end

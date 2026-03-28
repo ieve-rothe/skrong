@@ -113,7 +113,7 @@ describe Skrong::Commands::Summary do
       output_str = output.to_s
       # Should show total sets and movements
       output_str.should contain("Total movements: 2")
-      output_str.should contain("Total sets: 2")
+      output_str.should contain("Total sets/efforts: 2")
     end
 
     it "defaults to today if no date provided" do

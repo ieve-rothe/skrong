@@ -107,5 +107,85 @@ describe Skrong::DB::Migrations do
       count = db.query_one("SELECT COUNT(*) FROM categories", as: Int32)
       count.should eq(6)
     end
+
+    it "adds activity_type column to categories table" do
+      Skrong::DB::Migrations.run
+
+      db = Skrong::DB::Connection.instance
+      # Check if column exists by querying table info
+      has_activity_type = false
+      db.query("PRAGMA table_info(categories)") do |rs|
+        rs.each do
+          rs.read(Int64)    # cid
+          name = rs.read(String)
+          has_activity_type = true if name == "activity_type"
+          rs.read(String)   # type
+          rs.read(Int64)    # notnull
+          rs.read           # dflt_value (can be null)
+          rs.read(Int64)    # pk
+        end
+      end
+      has_activity_type.should be_true
+    end
+
+    it "sets default activity_type to 'strength' for seeded categories" do
+      Skrong::DB::Migrations.run
+
+      db = Skrong::DB::Connection.instance
+      # All 6 default categories should have activity_type = 'strength'
+      count = db.query_one("SELECT COUNT(*) FROM categories WHERE activity_type = 'strength'", as: Int32)
+      count.should eq(6)
+    end
+
+    it "makes weight and reps nullable in sets table" do
+      Skrong::DB::Migrations.run
+
+      db = Skrong::DB::Connection.instance
+      # Check schema - weight and reps should not have NOT NULL constraint
+      weight_nullable = false
+      reps_nullable = false
+
+      db.query("PRAGMA table_info(sets)") do |rs|
+        rs.each do
+          rs.read(Int64)    # cid
+          name = rs.read(String)
+          rs.read(String)   # type
+          notnull = rs.read(Int64)
+
+          weight_nullable = (notnull == 0) if name == "weight"
+          reps_nullable = (notnull == 0) if name == "reps"
+
+          rs.read           # dflt_value (can be null)
+          rs.read(Int64)    # pk
+        end
+      end
+
+      weight_nullable.should be_true
+      reps_nullable.should be_true
+    end
+
+    it "adds distance and duration_seconds columns to sets table" do
+      Skrong::DB::Migrations.run
+
+      db = Skrong::DB::Connection.instance
+      has_distance = false
+      has_duration = false
+
+      db.query("PRAGMA table_info(sets)") do |rs|
+        rs.each do
+          rs.read(Int64)    # cid
+          name = rs.read(String)
+          has_distance = true if name == "distance"
+          has_duration = true if name == "duration_seconds"
+          rs.read(String)   # type
+          rs.read(Int64)    # notnull
+          rs.read           # dflt_value (can be null)
+          rs.read(Int64)    # pk
+        end
+      end
+
+      has_distance.should be_true
+      has_duration.should be_true
+    end
   end
 end
