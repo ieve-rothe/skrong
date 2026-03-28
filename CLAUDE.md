@@ -31,9 +31,9 @@ crystal spec spec/commands/log_spec.cr:15
 ## Architecture Overview
 
 ### Core Philosophy
-- **RPE Threshold Rule**: Only sets with RPE ≥ 5 count as "hitting" a muscle group
 - **Decay Tracking**: Each muscle group has a `decay_threshold_days` that triggers warnings
-- **Status System**: OK (green) / WARN (yellow) / CRIT (red) based on days since last qualified workout
+- **Status System**: OK (green) / WARN (yellow) / CRIT (red) based on days since last workout
+- **All Sets Count**: Any set, regardless of RPE, counts as "hitting" a muscle group
 
 ### Database Design (SQLite)
 
@@ -45,7 +45,7 @@ crystal spec spec/commands/log_spec.cr:15
 - `sessions` - Workout sessions with dates (can be backdated)
 - `sets` - Individual sets with weight, reps, RPE
 
-**Critical business rule:** Decay calculation queries must filter `sets.rpe >= 5` to determine "last hit" dates.
+**Critical business rule:** All sets count toward decay calculation, regardless of RPE.
 
 ### Code Structure
 
@@ -196,11 +196,10 @@ The 6 default categories are **seeded on init** and should not be modified.
 
 ## Common Gotchas
 
-1. **RPE filtering**: Always use `sets.rpe >= 5` in decay queries
-2. **Date format**: Sessions use date strings, not timestamps
-3. **Duplicate prevention**: Seed import checks existing names before inserting
-4. **Test database**: Specs create/delete test DB before each test
-5. **Bool serialization**: Database uses INT, models use Bool (conversion needed)
+1. **Date format**: Sessions use date strings, not timestamps
+2. **Duplicate prevention**: Seed import checks existing names before inserting
+3. **Test database**: Specs create/delete test DB before each test
+4. **Bool serialization**: Database uses INT, models use Bool (conversion needed)
 
 ## File Conventions
 

@@ -270,18 +270,6 @@ SUMMARY:
 
 ## Business Logic Rules
 
-### RPE Threshold Rule
-**Only sets with RPE >= 5 count as "hitting" a muscle group.**
-
-When calculating "Last Hit" for a target:
-```sql
-SELECT MAX(sessions.date)
-FROM sets
-JOIN sessions ON sets.session_id = sessions.id
-JOIN movement_targets ON sets.movement_id = movement_targets.movement_id
-WHERE movement_targets.target_id = ? AND sets.rpe >= 5
-```
-
 ### Payload Parsing
 Space-delimited input format: `[weight] [reps] [rpe]`
 
@@ -311,13 +299,13 @@ When user selects "y" to log another set of the same movement:
 
 ### Decay Calculation
 For each target:
-1. Find most recent session date where target was hit with RPE >= 5
+1. Find most recent session date where target was hit (any RPE counts)
 2. Calculate `days_since = (TODAY - last_hit_date)` in days
 3. Determine status:
    - `days_since <= decay_threshold_days` → OK
    - `days_since <= decay_threshold_days + 2` → WARN
    - `days_since > decay_threshold_days + 2` → CRIT
-4. If no qualifying sets exist: CRIT with "Last Hit" as "--"
+4. If no sets exist: CRIT with "Last Hit" as "--"
 
 ## File Structure
 ```

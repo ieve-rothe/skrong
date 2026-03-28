@@ -104,36 +104,6 @@ describe Skrong::Models::Set do
     end
   end
 
-  describe ".find_qualifying" do
-    it "finds sets with RPE >= threshold" do
-      session = Skrong::Models::Session.create(Time.local(2026, 3, 24))
-      category = Skrong::Models::Category.all.first
-      movement = Skrong::Models::Movement.create("Squat", category.id)
-
-      Skrong::Models::Set.create(session.id, movement.id, 135.0, 10, 3)  # Below threshold
-      Skrong::Models::Set.create(session.id, movement.id, 225.0, 5, 5)   # At threshold
-      Skrong::Models::Set.create(session.id, movement.id, 245.0, 3, 8)   # Above threshold
-
-      qualifying_sets = Skrong::Models::Set.find_qualifying(rpe_threshold: 5)
-      qualifying_sets.size.should eq(2)
-
-      # Verify RPEs are >= 5
-      qualifying_sets.all? { |s| s.rpe >= 5 }.should be_true
-    end
-
-    it "returns empty array when no qualifying sets exist" do
-      session = Skrong::Models::Session.create(Time.local(2026, 3, 24))
-      category = Skrong::Models::Category.all.first
-      movement = Skrong::Models::Movement.create("Squat", category.id)
-
-      Skrong::Models::Set.create(session.id, movement.id, 135.0, 10, 3)
-      Skrong::Models::Set.create(session.id, movement.id, 135.0, 10, 4)
-
-      qualifying_sets = Skrong::Models::Set.find_qualifying(rpe_threshold: 5)
-      qualifying_sets.should be_empty
-    end
-  end
-
   describe "#to_s" do
     it "returns formatted set description" do
       session = Skrong::Models::Session.create(Time.local(2026, 3, 24))

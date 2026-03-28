@@ -10,10 +10,10 @@ module Skrong
       )
 
       # Calculates decay status for a single target
-      def self.calculate_for_target(target : Target, today : Time = Time.local, rpe_threshold : Int32 = 5) : DecayResult?
+      def self.calculate_for_target(target : Target, today : Time = Time.local) : DecayResult?
         db = DB::Connection.instance
 
-        # Query to find the most recent qualifying set for this target
+        # Query to find the most recent set for this target
         query = <<-SQL
           SELECT
             sessions.date,
@@ -23,12 +23,11 @@ module Skrong
           JOIN movements ON sets.movement_id = movements.id
           JOIN movement_targets ON movements.id = movement_targets.movement_id
           WHERE movement_targets.target_id = ?
-            AND sets.rpe >= ?
           ORDER BY sessions.date DESC
           LIMIT 1
         SQL
 
-        result = db.query_one?(query, target.id, rpe_threshold, as: {String, String})
+        result = db.query_one?(query, target.id, as: {String, String})
 
         return nil unless result
 
@@ -53,12 +52,12 @@ module Skrong
       end
 
       # Calculates decay for all tracked targets
-      def self.calculate_all(today : Time = Time.local, rpe_threshold : Int32 = 5) : Array(DecayResult)
+      def self.calculate_all(today : Time = Time.local) : Array(DecayResult)
         targets = Target.tracked
         results = [] of DecayResult
 
         targets.each do |target|
-          result = calculate_for_target(target, today: today, rpe_threshold: rpe_threshold)
+          result = calculate_for_target(target, today: today)
 
           if result
             results << result

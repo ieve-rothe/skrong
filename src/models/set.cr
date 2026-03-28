@@ -127,30 +127,6 @@ module Skrong
         sets
       end
 
-      # Finds sets with RPE >= threshold (qualifying sets that count as "hitting" a target)
-      def self.find_qualifying(rpe_threshold : Int32 = 5) : Array(Set)
-        sets = [] of Set
-        db = DB::Connection.instance
-
-        db.query(
-          "SELECT id, session_id, movement_id, weight, reps, rpe FROM sets WHERE rpe >= ?",
-          rpe_threshold
-        ) do |rs|
-          rs.each do
-            sets << Set.new(
-              id: rs.read(Int64),
-              session_id: rs.read(Int64),
-              movement_id: rs.read(Int64),
-              weight: rs.read(Float64),
-              reps: rs.read(Int32),
-              rpe: rs.read(Int32)
-            )
-          end
-        end
-
-        sets
-      end
-
       # String representation of the set
       def to_s : String
         "#{@weight} x #{@reps} @ RPE #{@rpe}"

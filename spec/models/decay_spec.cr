@@ -35,7 +35,7 @@ describe Skrong::Models::Decay do
       result.not_nil![:days_since].should eq(4)
     end
 
-    it "only considers sets with RPE >= 5" do
+    it "counts all sets regardless of RPE" do
       target = Skrong::Models::Target.create("Quadriceps")
       category = Skrong::Models::Category.all.first
       movement = Skrong::Models::Movement.create("Squat", category.id)
@@ -45,15 +45,15 @@ describe Skrong::Models::Decay do
       session1 = Skrong::Models::Session.create(Time.local(2026, 3, 24))
       Skrong::Models::Set.create(session1.id, movement.id, 135.0, 10, 3)
 
-      # Create qualifying set 4 days ago
+      # Create higher RPE set 4 days ago
       session2 = Skrong::Models::Session.create(Time.local(2026, 3, 20))
       Skrong::Models::Set.create(session2.id, movement.id, 225.0, 5, 8)
 
       today = Time.local(2026, 3, 24)
-      result = Skrong::Models::Decay.calculate_for_target(target, today: today, rpe_threshold: 5)
+      result = Skrong::Models::Decay.calculate_for_target(target, today: today)
 
       result.should_not be_nil
-      result.not_nil![:days_since].should eq(4)  # Should ignore the RPE 3 set
+      result.not_nil![:days_since].should eq(0)  # Should use the RPE 3 set from today
     end
 
     it "determines OK status when within threshold" do
