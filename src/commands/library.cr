@@ -107,6 +107,8 @@ module Skrong
         output.puts "  Name: #{movement.name}"
         output.puts "  Category: #{category.name}"
         output.puts "  ID: #{movement.id}"
+
+        DB::Connection.backup
       end
 
       # Deletes a movement from the library
@@ -140,6 +142,7 @@ module Skrong
           db.exec("DELETE FROM movements WHERE id = ?", movement_id)
 
           output.puts "Movement deleted successfully."
+          DB::Connection.backup
         else
           output.puts "Deletion cancelled."
         end

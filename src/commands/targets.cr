@@ -92,6 +92,8 @@ module Skrong
         output.puts "  ID: #{target.id}"
         output.puts "  Tracked: #{target.is_tracked ? "Yes" : "No"}"
         output.puts "  Decay threshold: #{target.decay_threshold_days} days"
+
+        DB::Connection.backup
       end
 
       # Deletes a target from the system
@@ -123,6 +125,7 @@ module Skrong
           db.exec("DELETE FROM targets WHERE id = ?", target_id)
 
           output.puts "Target deleted successfully."
+          DB::Connection.backup
         else
           output.puts "Deletion cancelled."
         end
@@ -206,6 +209,8 @@ module Skrong
         output.puts "  Name: #{new_name}"
         output.puts "  Tracked: #{new_is_tracked ? "Yes" : "No"}"
         output.puts "  Decay threshold: #{new_decay_days} days"
+
+        DB::Connection.backup
       end
     end
   end

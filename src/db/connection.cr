@@ -30,6 +30,21 @@ module Skrong
         @@instance = nil
       end
 
+      # Creates a backup of the database file
+      # Skips backup for test databases
+      def self.backup
+        return if ENV["SKRONG_ENV"]? == "test"
+        return unless File.exists?(db_path)
+
+        backup_path = "#{db_path}.backup"
+        File.copy(db_path, backup_path)
+      end
+
+      # Returns the backup file path
+      def self.backup_path : String
+        "#{db_path}.backup"
+      end
+
       # Ensures the database directory exists
       private def self.ensure_db_directory
         db_dir = File.dirname(db_path)

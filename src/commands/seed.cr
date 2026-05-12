@@ -44,6 +44,8 @@ module Skrong
         output.puts "=" * 60
         output.puts "#{imported} categories imported successfully, #{skipped} skipped."
         output.puts "=" * 60
+
+        DB::Connection.backup if imported > 0
       end
 
       # Imports targets from a seed file
@@ -86,6 +88,8 @@ module Skrong
         output.puts "=" * 60
         output.puts "#{imported} targets imported successfully, #{skipped} skipped."
         output.puts "=" * 60
+
+        DB::Connection.backup if imported > 0
       end
 
       # Imports movements from a seed file
@@ -146,6 +150,8 @@ module Skrong
         output.puts "=" * 60
         output.puts "#{imported} movements imported successfully, #{skipped} skipped, #{errors} errors."
         output.puts "=" * 60
+
+        DB::Connection.backup if imported > 0
       end
 
       # Parses categories seed file content

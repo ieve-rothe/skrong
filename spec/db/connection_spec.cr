@@ -15,10 +15,10 @@ describe Skrong::DB::Connection do
   end
 
   describe ".db_path" do
-    it "returns the XDG-compliant database path" do
+    it "returns test database path in test mode" do
       path = Skrong::DB::Connection.db_path
-      path.should contain(".local/share/skrong")
-      path.should end_with("skrong.db")
+      path.should contain("spec")
+      path.should end_with("test.db")
     end
 
     it "creates parent directory if it doesn't exist" do
@@ -38,6 +38,27 @@ describe Skrong::DB::Connection do
       # After reset, we should successfully get a new connection
       # Both instances point to the same file but are different connection objects
       db2.should be_a(::DB::Database)
+    end
+  end
+
+  describe ".backup" do
+    it "skips backup for test databases" do
+      # In test mode, backup should be a no-op
+      backup_path = Skrong::DB::Connection.backup_path
+
+      # Ensure test database exists
+      Skrong::DB::Connection.instance
+
+      # Backup should not create a file in test mode
+      Skrong::DB::Connection.backup
+      File.exists?(backup_path).should be_false
+    end
+  end
+
+  describe ".backup_path" do
+    it "returns the backup file path" do
+      path = Skrong::DB::Connection.backup_path
+      path.should eq("#{Skrong::DB::Connection.db_path}.backup")
     end
   end
 end

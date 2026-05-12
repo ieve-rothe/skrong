@@ -106,6 +106,7 @@ module Skrong
           # User requested quit - show summary if any sets were logged
           if set_count > 0
             show_summary(output, session, set_count, movements_used)
+            DB::Connection.backup
           else
             output.puts
             output.puts "No sets logged. Session cancelled."
