@@ -32,6 +32,8 @@ module Skrong
         handle_targets_command(args[1..]?, input: input, output: output)
       when "seed"
         handle_seed_command(args[1..]?, output: output)
+      when "export"
+        handle_export_command(args[1..]?, output: output)
       else
         output.puts "Unknown command: #{command}"
         output.puts "Run 'skrong --help' for usage information."
@@ -192,6 +194,46 @@ module Skrong
       end
     end
 
+    # Handles export subcommands
+    private def self.handle_export_command(subargs : Array(String)?, output : IO)
+      if subargs.nil? || subargs.empty?
+        output.puts "Export command requires a subcommand."
+        output.puts ""
+        output.puts "Available subcommands:"
+        output.puts "  export targets <file>     Export targets to seed file"
+        output.puts "  export movements <file>   Export movements to seed file"
+        output.puts ""
+        output.puts "Examples:"
+        output.puts "  skrong export targets targets_backup.md"
+        output.puts "  skrong export movements movements_backup.md"
+        return
+      end
+
+      subcommand = subargs[0]
+
+      case subcommand
+      when "targets"
+        if subargs.size < 2
+          output.puts "Usage: skrong export targets <file_path>"
+          return
+        end
+
+        file_path = subargs[1]
+        Commands::Export.export_targets(file_path, output: output)
+      when "movements"
+        if subargs.size < 2
+          output.puts "Usage: skrong export movements <file_path>"
+          return
+        end
+
+        file_path = subargs[1]
+        Commands::Export.export_movements(file_path, output: output)
+      else
+        output.puts "Unknown export subcommand: #{subcommand}"
+        output.puts "Run 'skrong export' to see available subcommands."
+      end
+    end
+
     # Shows help information
     private def self.show_help(output : IO)
       output.puts <<-HELP
@@ -214,6 +256,8 @@ module Skrong
         targets delete <id>       Delete a target
         seed targets <file>       Import targets from seed file
         seed movements <file>     Import movements from seed file
+        export targets <file>     Export targets to seed file
+        export movements <file>   Export movements to seed file
 
       Options:
         -h, --help               Show this help message
@@ -230,6 +274,8 @@ module Skrong
         skrong targets add       Add a custom muscle group
         skrong seed targets targets_seed.md    Bulk import targets
         skrong seed movements movements_seed.md    Bulk import movements
+        skrong export targets targets_backup.md    Export targets as backup
+        skrong export movements movements_backup.md    Export movements as backup
 
       For more information, visit: https://github.com/yourusername/skrong
       HELP

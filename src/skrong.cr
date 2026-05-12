@@ -17,6 +17,7 @@ require "./commands/library"
 require "./commands/summary"
 require "./commands/targets"
 require "./commands/seed"
+require "./commands/export"
 require "./cli"
 
 module Skrong
